@@ -92,7 +92,10 @@ export async function Log(
  */
 function reportLoggerFailure(message: string): void {
   // eslint-disable-next-line no-console
-  if (typeof process !== "undefined" && process.stderr) {
+  if (typeof process !== "undefined" && process.stderr && typeof process.stderr.write === "function") {
     process.stderr.write(`[logger-failure] ${message}\n`);
+  } else {
+    // eslint-disable-next-line no-console
+    console.error(`[logger-failure] ${message}`);
   }
 }

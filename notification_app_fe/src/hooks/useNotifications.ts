@@ -1,15 +1,10 @@
-/**
- * Hook that fetches notifications from the backend and exposes
- * loading/error state. Re-fetches whenever the input params change.
- */
-
 import { useEffect, useState, useCallback } from "react";
 import { Log } from "logging-middleware";
 import {
   fetchNotifications,
   fetchPriorityNotifications,
-  Notification,
-  ListParams,
+  type Notification,
+  type ListParams,
 } from "../api/notifications";
 
 interface UseNotificationsResult {
@@ -32,12 +27,10 @@ export function useNotifications(params: ListParams): UseNotificationsResult {
     setLoading(true);
     setError(null);
 
-    Log(
-      "frontend",
-      "debug",
-      "hook",
-      `useNotifications loading params=${JSON.stringify(params)}`
-    ).catch(() => undefined);
+    // Fire and forget logging
+    try {
+      Log("frontend", "debug", "hook", "loading notifications").catch(() => {});
+    } catch (e) {}
 
     fetchNotifications(params)
       .then((items) => {
@@ -47,15 +40,8 @@ export function useNotifications(params: ListParams): UseNotificationsResult {
       })
       .catch((err) => {
         if (cancelled) return;
-        const message = err instanceof Error ? err.message : "Unknown error";
-        setError(message);
+        setError(err instanceof Error ? err.message : "Fetch failed");
         setLoading(false);
-        Log(
-          "frontend",
-          "error",
-          "hook",
-          `useNotifications failed: ${message}`
-        ).catch(() => undefined);
       });
 
     return () => {
@@ -79,12 +65,9 @@ export function usePriorityNotifications(n: number): UseNotificationsResult {
     setLoading(true);
     setError(null);
 
-    Log(
-      "frontend",
-      "debug",
-      "hook",
-      `usePriorityNotifications loading n=${n}`
-    ).catch(() => undefined);
+    try {
+      Log("frontend", "debug", "hook", "loading priority").catch(() => {});
+    } catch (e) {}
 
     fetchPriorityNotifications(n)
       .then((items) => {
@@ -94,15 +77,8 @@ export function usePriorityNotifications(n: number): UseNotificationsResult {
       })
       .catch((err) => {
         if (cancelled) return;
-        const message = err instanceof Error ? err.message : "Unknown error";
-        setError(message);
+        setError(err instanceof Error ? err.message : "Fetch failed");
         setLoading(false);
-        Log(
-          "frontend",
-          "error",
-          "hook",
-          `usePriorityNotifications failed: ${message}`
-        ).catch(() => undefined);
       });
 
     return () => {

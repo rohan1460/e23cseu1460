@@ -1,10 +1,3 @@
-/**
- * API client for the notifications backend.
- *
- * Centralises base URL, query parameter handling, and error normalisation
- * so individual hooks and pages stay focused on UI logic.
- */
-
 import { Log } from "logging-middleware";
 
 const API_BASE = "http://localhost:4000/api/notifications";
@@ -24,81 +17,37 @@ export interface ListParams {
   notificationType?: NotificationType;
 }
 
-interface NotificationsResponse {
-  notifications: Notification[];
-  count?: number;
-}
-
-export async function fetchNotifications(
-  params: ListParams = {}
-): Promise<Notification[]> {
+export async function fetchNotifications(params: ListParams = {}): Promise<Notification[]> {
   const url = buildUrl(API_BASE, params);
 
-  await Log(
-    "frontend",
-    "debug",
-    "api",
-    `requesting notifications url=${url}`
-  ).catch(() => undefined);
+  // Fire and forget logging so it never blocks the main UI flow
+  try {
+    Log("frontend", "debug", "api", `requesting url=${url}`).catch(() => {});
+  } catch (e) {}
 
   const response = await fetch(url);
-
   if (!response.ok) {
-    await Log(
-      "frontend",
-      "error",
-      "api",
-      `notifications request failed status=${response.status}`
-    ).catch(() => undefined);
-    throw new Error(`Failed to load notifications (status ${response.status})`);
+    throw new Error(`Backend error: ${response.status}`);
   }
 
-  const data = (await response.json()) as NotificationsResponse;
-
-  await Log(
-    "frontend",
-    "info",
-    "api",
-    `received ${data.notifications.length} notifications`
-  ).catch(() => undefined);
-
-  return data.notifications;
+  const data = await response.json();
+  return data.notifications || [];
 }
 
-export async function fetchPriorityNotifications(
-  n: number
-): Promise<Notification[]> {
-  const url = `${API_BASE}/priority?n=${encodeURIComponent(String(n))}`;
-
-  await Log(
-    "frontend",
-    "debug",
-    "api",
-    `requesting priority notifications n=${n}`
-  ).catch(() => undefined);
+export async function fetchPriorityNotifications(n: number): Promise<Notification[]> {
+  const url = `${API_BASE}/priority?n=${n}`;
+  
+  try {
+    Log("frontend", "debug", "api", `requesting priority n=${n}`).catch(() => {});
+  } catch (e) {}
 
   const response = await fetch(url);
-
   if (!response.ok) {
-    await Log(
-      "frontend",
-      "error",
-      "api",
-      `priority request failed status=${response.status}`
-    ).catch(() => undefined);
-    throw new Error(`Failed to load priority notifications`);
+    throw new Error(`Backend error: ${response.status}`);
   }
 
-  const data = (await response.json()) as NotificationsResponse;
-
-  await Log(
-    "frontend",
-    "info",
-    "api",
-    `received ${data.notifications.length} priority notifications`
-  ).catch(() => undefined);
-
-  return data.notifications;
+  const data = await response.json();
+  return data.notifications || [];
 }
 
 function buildUrl(base: string, params: ListParams): string {
